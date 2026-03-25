@@ -1,0 +1,55 @@
+cabal-version:   3.16
+name:            warg
+version:         0.1.0.0
+license:         NONE
+author:          Unknown
+maintainer:      Unknown
+build-type:      Simple
+extra-doc-files: CHANGELOG.md
+
+-- Year 0 implementation: gradual semantics of abstract argumentation.
+-- Categorical structure (D-actegory, Para•(WArg)) deferred to Year 1.
+-- Wire format: JSON stdin → JSON stdout (flat array, see sybyn/warg_ffi.py).
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:  DUnit
+                    , Types
+                    , Monoidal
+                    , FixedPoint
+                    , Explanation
+    build-depends:    base      ^>=4.18.3.0
+                    , aeson     >= 2.0
+                    , text      >= 2.0
+                    , containers >= 0.6
+                    , QuickCheck >= 2.14
+    hs-source-dirs:   src
+    default-language: GHC2021
+
+executable warg
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base       ^>=4.18.3.0
+                    , warg
+                    , aeson      >= 2.0
+                    , bytestring >= 0.11
+                    , text       >= 2.0
+                    , containers >= 0.6
+    hs-source-dirs:   app
+    default-language: GHC2021
+
+test-suite warg-test
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          Spec.hs
+    build-depends:    base       ^>=4.18.3.0
+                    , warg
+                    , QuickCheck >= 2.14
+                    , containers >= 0.6
+                    , text       >= 2.0
+    hs-source-dirs:   test
+    default-language: GHC2021
+    ghc-options:      -Wno-orphans
