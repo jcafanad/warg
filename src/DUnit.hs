@@ -20,6 +20,8 @@ module DUnit
   ( DUnit(..)
   , mkDUnit
   , dDiff
+  , prop_diff_exists
+  , prop_diff_upper_bound
   , prop_diff_antitone
   , prop_diff_involution
   ) where
@@ -61,6 +63,38 @@ instance Arbitrary DUnit where
 -- ---------------------------------------------------------------------------
 -- QuickCheck D-Poset laws
 -- ---------------------------------------------------------------------------
+
+-- | D-Poset law existence: if a ≤ b then dDiff b a is defined (not Nothing).
+--
+-- This is law (i) in its partiality aspect: the subtraction b \ a exists
+-- whenever a ≤ b. Trivially satisfied by the formula (b − a is defined for
+-- all reals), but testing it explicitly catches any future changes to the
+-- guard in 'dDiff' that would incorrectly reject the defined case.
+--
+-- The ==> guard discards cases where a > b; in those cases dDiff b a is
+-- correctly Nothing and the property does not apply.
+prop_diff_exists :: DUnit -> DUnit -> Property
+prop_diff_exists a b =
+  a <= b ==>
+    case dDiff b a of
+      Nothing -> False
+      Just _  -> True
+
+-- | D-Poset law (i), upper bound: b \ a ≤ b.
+--
+-- When a ≥ 0 (which the DUnit invariant guarantees), b − a ≤ b holds
+-- trivially by arithmetic. This property makes that guarantee explicit
+-- as a QuickCheck check, catching any future clamping or normalisation
+-- that might violate it.
+--
+-- The ==> guard discards cases where a > b; we use fromMaybe True
+-- (conservative pass on the unreachable Nothing branch).
+prop_diff_upper_bound :: DUnit -> DUnit -> Property
+prop_diff_upper_bound a b =
+  a <= b ==>
+    fromMaybe True $ do
+      bma <- dDiff b a
+      return (bma <= b)
 
 -- | D-Poset law (iii), antitone part:
 -- if a ≤ b ≤ c then c \\ b ≤ c \\ a.
