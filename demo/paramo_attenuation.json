@@ -1,0 +1,66 @@
+{
+  "_schema_version": "warg-wire-format-1.0",
+  "_scenario": "paramo_attenuation — attenuation gate demonstration",
+  "_description": "Three unattacked atoms with perplexity variation. Demonstrates attenuation gate firing for claims exceeding corpus_max_perplexity threshold. Gate condition is strict inequality (λ_⊥ > threshold, not ≥), so threshold-equal claim survives.",
+  
+  "_field_semantics": {
+    "initial_weight": "NLI engagement at τ construction time. Computed as max(p_E, p_C) from BETO logits (direction-neutral). This is w(aᵢ) in Definition 2.1 of [7], the h-categoriser seed (σ⁰). Range: [0,1].",
+    "weight": "VALUE_NET engagement score. Perplexity-attenuated BETO confidence. Passed to Haskell for provenance but NOT used by the current h-categoriser (Year 0). Future: drives Belnap fixed-point in cubun layer (Year 1). Range: [0,1].",
+    "perplexity": "BETO perplexity (λ_⊥) for this span. Measures model uncertainty. Used by attenuation gate: if λ_⊥ > corpus_max_perplexity, force σ*=0.0 and set attenuated=true. Higher perplexity = colonial epistemic exclusion. Range: [0, ∞).",
+    "attacks": "List of argument names this argument attacks (target names, not source names). All atoms in this scenario are unattacked (no attack topology), so h-categoriser trivially converges all non-attenuated atoms to σ*=1.0. Only the attenuation gate differentiates outcomes."
+  },
+  
+  "_perplexity_values": {
+    "recurso_hidrico_estado": "6.1 — Constructed value representing concrete institutional claims in standard Spanish. Well below threshold → no epistemic exclusion.",
+    "poner_a_valer_trabajo": "21.769 — Empirical value from 'poner a valer a través del trabajo' (Speaker GR, automatic subject atom). This is the corpus maximum perplexity for natural Spanish in the Paramuno dataset. Setting corpus_max at this value preserves the automatic subject at its own ceiling.",
+    "ontologia_paramuna": "28.4 — Constructed value representing Paramuno lifeworld ontological claims that exceed BETO's corpus geometry. Above threshold → epistemic imposition, attenuated before argumentation begins."
+  },
+  
+  "_automatic_subject_note": "The threshold value 21.769 is not a neutral technical parameter. It is the empirical λ_⊥ of the automatic subject atom ('poner a valer a través del trabajo'). Setting the threshold here is a decolonial design decision: the system preserves the highest-perplexity natural Spanish claim. A lower threshold (e.g., 20.0) would silence it. The parameter choice determines whose discourse survives.",
+  
+  "_expected_output": {
+    "recurso_hidrico_estado": {
+      "gradual_weight": 1.0,
+      "attenuated": false,
+      "rationale": "Unattacked (no topology) → σ*=1.0 via h-categoriser. λ_⊥=6.1 < 21.769 → gate does not fire."
+    },
+    "poner_a_valer_trabajo": {
+      "gradual_weight": 1.0,
+      "attenuated": false,
+      "rationale": "Unattacked → σ*=1.0. λ_⊥=21.769 = threshold, but gate condition is STRICT (λ_⊥ > threshold), so this passes. Automatic subject survives."
+    },
+    "ontologia_paramuna": {
+      "gradual_weight": 0.0,
+      "attenuated": true,
+      "rationale": "λ_⊥=28.4 > 21.769 → gate fires. σ* forced to 0.0. Marked attenuated=true. Epistemic imposition: silenced by BETO's Iberian training corpus geometry, not by argumentation defeat."
+    }
+  },
+  
+  "_epistemic_violence_distinction": "A claim with low σ* due to attack topology has been ARGUED AGAINST (structural silencing). A claim marked attenuated=true has been SUPPRESSED BEFORE ARGUMENT BEGINS (epistemic imposition). The flag makes colonial geometry computationally detectable.",
+  
+  "corpus_max_perplexity": 21.769,
+  
+  "atoms": [
+    {
+      "name": "recurso_hidrico_estado",
+      "initial_weight": 0.77,
+      "weight": 0.80,
+      "perplexity": 6.1,
+      "attacks": []
+    },
+    {
+      "name": "poner_a_valer_trabajo",
+      "initial_weight": 0.72,
+      "weight": 0.65,
+      "perplexity": 21.769,
+      "attacks": []
+    },
+    {
+      "name": "ontologia_paramuna",
+      "initial_weight": 0.68,
+      "weight": 0.35,
+      "perplexity": 28.4,
+      "attacks": []
+    }
+  ]
+}

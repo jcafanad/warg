@@ -1,0 +1,55 @@
+{
+  "_schema_version": "warg-wire-format-1.0",
+  "_scenario": "paramo_gate_interaction — gate + h-categoriser interaction",
+  "_description": "Two-argument scenario showing attenuation gate and h-categoriser operating at different layers. Attack topology is present (evidencia_institucional → ontologia_paramuna) but the attack never fires because the target is attenuated BEFORE entering the argumentation space. Demonstrates epistemic imposition vs. structural silencing distinction.",
+  
+  "_field_semantics": {
+    "initial_weight": "NLI engagement at τ construction time. Computed as max(p_E, p_C) from BETO logits (direction-neutral). This is w(aᵢ) in Definition 2.1 of [7], the h-categoriser seed (σ⁰). Range: [0,1].",
+    "weight": "VALUE_NET engagement score. Perplexity-attenuated BETO confidence. In this scenario, note the large gap for ontologia_paramuna (initial_weight=0.71, weight=0.38): BETO had moderate directional engagement but low confidence after perplexity penalty. The gate confirms this is beyond corpus geometry.",
+    "perplexity": "BETO perplexity (λ_⊥) for this span. Measures model uncertainty. Used by attenuation gate: if λ_⊥ > corpus_max_perplexity, force σ*=0.0 and set attenuated=true. Higher perplexity = colonial epistemic exclusion. Range: [0, ∞).",
+    "attacks": "List of argument names this argument attacks. In this scenario, evidencia_institucional attacks ontologia_paramuna, but the attack is IRRELEVANT because ontologia_paramuna is attenuated before the h-categoriser runs."
+  },
+  
+  "_perplexity_values": {
+    "evidencia_institucional": "4.5 — Constructed value representing institutional scientific claims in standard Spanish. Low perplexity = BETO's training corpus geometry aligns with colonial-modern epistemology.",
+    "ontologia_paramuna": "25.2 — Constructed value representing Paramuno lifeworld ontological claims (e.g., water-as-person, páramo-as-ancestor). Exceeds threshold (21.769) → BETO's Iberian training data lacks these epistemic categories."
+  },
+  
+  "_pedagogical_point": "This scenario isolates the gate-vs-topology distinction. If ontologia_paramuna had λ_⊥ < 21.769, it would enter the argumentation space and be DEFEATED by evidencia_institucional (structural silencing: low σ* due to attack). Instead, it is ATTENUATED before argument begins (epistemic imposition: excluded by corpus geometry). The attack is formally present in the topology but never fires. This is the computational signature of colonial epistemic violence.",
+  
+  "_expected_output": {
+    "evidencia_institucional": {
+      "gradual_weight": 1.0,
+      "attenuated": false,
+      "rationale": "Unattacked → σ*=1.0 via h-categoriser. λ_⊥=4.5 < 21.769 → gate does not fire. The attack this atom directs at ontologia_paramuna is irrelevant because the target is already attenuated."
+    },
+    "ontologia_paramuna": {
+      "gradual_weight": 0.0,
+      "attenuated": true,
+      "rationale": "λ_⊥=25.2 > 21.769 → gate fires BEFORE h-categoriser runs. σ* forced to 0.0. The attack from evidencia_institucional never enters the fixed-point iteration because this atom is excluded from the argumentation space ab initio."
+    }
+  },
+  
+  "_contrast_with_structural_silencing": "If ontologia_paramuna had λ_⊥=10.0 (below threshold), it would survive the gate and enter the argumentation space. Then evidencia_institucional (σ*=1.0) would attack it, reducing its gradual weight via the h-categoriser formula: σ(ontologia) = 0.71 / (0.71 + 1.0) ≈ 0.415. This would be DEFEAT (structural silencing), not EXCLUSION (epistemic imposition). The attenuated=false flag would signal the difference.",
+  
+  "_theoretical_grounding": "Adorno's negative dialectics: preserve non-identity, refuse synthesis. The attenuation gate preserves the trace of what cannot enter the argumentation space — the attenuated=true flag is the computational inscription of colonial epistemic exclusion. Without it, ontologia_paramuna would simply be absent (σ*=0.0 with no explanation). The flag makes the violence visible.",
+  
+  "corpus_max_perplexity": 21.769,
+  
+  "atoms": [
+    {
+      "name": "evidencia_institucional",
+      "initial_weight": 0.78,
+      "weight": 0.82,
+      "perplexity": 4.5,
+      "attacks": ["ontologia_paramuna"]
+    },
+    {
+      "name": "ontologia_paramuna",
+      "initial_weight": 0.71,
+      "weight": 0.38,
+      "perplexity": 25.2,
+      "attacks": []
+    }
+  ]
+}

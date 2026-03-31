@@ -1,0 +1,58 @@
+{
+  "_schema_version": "warg-wire-format-1.0",
+  "_scenario": "paramo_defended — reinstatement demonstration",
+  "_description": "Three-argument chain showing reinstatement: a defeated attacker cannot sustain its attack. Unattacked evidencia_hidrica defeats estado_concesion, which reduces attack pressure on paramo_territorio, allowing it to recover above the 0.5 acceptability threshold.",
+  
+  "_field_semantics": {
+    "initial_weight": "NLI engagement at τ construction time. Computed as max(p_E, p_C) from BETO logits (direction-neutral). This is w(aᵢ) in Definition 2.1 of [7], the h-categoriser seed (σ⁰). Range: [0,1].",
+    "weight": "VALUE_NET engagement score. Perplexity-attenuated BETO confidence. Passed to Haskell for provenance but NOT used by the current h-categoriser (Year 0). Future: drives Belnap fixed-point in cubun layer (Year 1). Range: [0,1].",
+    "perplexity": "BETO perplexity (λ_⊥) for this span. Measures model uncertainty. Used by attenuation gate: if λ_⊥ > corpus_max_perplexity, force σ*=0.0 and set attenuated=true. Higher perplexity = colonial epistemic exclusion. Range: [0, ∞).",
+    "attacks": "List of argument names this argument attacks (target names, not source names). Attack direction: this atom → target atoms."
+  },
+  
+  "_perplexity_values": "Constructed for pedagogical demonstration (not empirical corpus spans). Values chosen to demonstrate range: low (4.2, concrete empirical claim) to moderate (7.1, institutional claim). All below attenuation threshold (21.769), so gate does not fire in this scenario.",
+  
+  "_expected_output": {
+    "evidencia_hidrica": {
+      "gradual_weight": 1.0,
+      "attenuated": false,
+      "rationale": "Unattacked argument with positive initial weight converges to σ*=1.0 under h-categoriser (Definition 2.7 of [7]). No attack pressure → maximum acceptability degree."
+    },
+    "estado_concesion": {
+      "gradual_weight": 0.408,
+      "attenuated": false,
+      "rationale": "Attacked by evidencia_hidrica (σ*=1.0). Formula: σ(estado) = w(estado) / (w(estado) + σ(evidencia)) = 0.69 / (0.69 + 1.0) ≈ 0.408. Defeated."
+    },
+    "paramo_territorio": {
+      "gradual_weight": 0.641,
+      "attenuated": false,
+      "rationale": "Attacked by estado_concesion (σ*=0.408). Formula: σ(paramo) = 0.73 / (0.73 + 0.408) ≈ 0.641. Reinstatement: weakened attacker reduces pressure, allowing σ* > 0.5."
+    }
+  },
+  
+  "corpus_max_perplexity": 21.769,
+  
+  "atoms": [
+    {
+      "name": "evidencia_hidrica",
+      "initial_weight": 0.81,
+      "weight": 0.75,
+      "perplexity": 4.2,
+      "attacks": ["estado_concesion"]
+    },
+    {
+      "name": "estado_concesion",
+      "initial_weight": 0.69,
+      "weight": 0.70,
+      "perplexity": 7.1,
+      "attacks": ["paramo_territorio"]
+    },
+    {
+      "name": "paramo_territorio",
+      "initial_weight": 0.73,
+      "weight": 0.68,
+      "perplexity": 6.8,
+      "attacks": []
+    }
+  ]
+}
