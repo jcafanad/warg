@@ -4,6 +4,7 @@
 -- FixedPoint / attenuation properties.
 module Main (main) where
 
+import Data.Ratio ((%))
 import Test.QuickCheck
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
@@ -45,7 +46,7 @@ genPrefixed :: String -> Gen WArg
 genPrefixed prefix = do
   n <- chooseInt (0, 5)
   let ids = [ T.pack (prefix <> show (i :: Int)) | i <- [0 .. n - 1] ]
-  weights <- mapM (\_ -> DUnit . min 1.0 . abs <$> (arbitrary :: Gen Double)) ids
+  weights <- mapM (\_ -> arbitrary :: Gen DUnit) ids
   perps   <- mapM (\_ -> abs <$> (arbitrary :: Gen Double)) ids
   let args = Map.fromList
         [ (iid, Arg { argId = iid, argWeight = w, argPerplexity = p })
@@ -124,8 +125,10 @@ prop_attenuation_gate_below_threshold =
   case Map.lookup "low_perplexity_atom" attMap of
     Nothing           -> False
     Just (gw, attenu) ->
-      -- Unattacked argument with positive initial weight should converge to 1.0
-      abs (unDUnit gw - 1.0) < 1e-9 && not attenu
+      -- Unattacked argument with positive initial weight converges to exactly 1.
+      -- Under Rational arithmetic the fixed point is reached exactly; no
+      -- tolerance is needed.
+      unDUnit gw == 1 && not attenu
   where
     threshold = 21.769
     warg = WArg
@@ -178,25 +181,28 @@ main = do
   putStr "prop_assoc (disjoint):  " >> quickCheck prop_assoc_disjoint
 
   putStrLn "=== hCategoriser unit tests ==="
-  -- Unattacked argument: h(w, []) = w / (w + 0) = 1.0.
-  -- This is the single-step result; the fixed-point converges to 1.0.
-  let w = DUnit 0.7
+  -- Unattacked argument: h(w, []) = w / (w + 0) = 1.
+  -- With Rational arithmetic this is exact: 7/10 / (7/10 + 0) = 1 % 1.
+  let w = DUnit (7 % 10)
   let result = hCategoriser w []
-  if abs (unDUnit result - 1.0) < 1e-10
+  if unDUnit result == 1
     then putStrLn "hCategoriser []:              PASS"
     else putStrLn ("hCategoriser []: FAIL (got " ++ show (unDUnit result) ++ ")")
 
   -- Zero-weight argument stays at 0
-  let z = hCategoriser (DUnit 0) [DUnit 0.5]
+  let z = hCategoriser (DUnit 0) [DUnit (1 % 2)]
   if unDUnit z == 0
     then putStrLn "hCategoriser zero-weight:     PASS"
     else putStrLn ("hCategoriser zero-weight: FAIL (got " ++ show (unDUnit z) ++ ")")
 
-  -- Two equal-weight atoms mutually attacking converge to 0.5
+  -- Two equal-weight atoms mutually attacking converge to exactly 1/2.
+  -- Rational fixed-point: σ = 1/2 is the unique solution to
+  --   σ = w / (w + σ)  with w = 1/2, which gives σ(1 + σ/w) = 1,
+  --   i.e. σ + σ²/w = w => σ = w / (w + σ). At σ = 1/2: 1/2 / (1/2 + 1/2) = 1/2. ✓
   let twoAtom = WArg
         { wArgArgs = Map.fromList
-            [ ("a", Arg "a" (DUnit 0.5) 0)
-            , ("b", Arg "b" (DUnit 0.5) 0)
+            [ ("a", Arg "a" (DUnit (1 % 2)) 0)
+            , ("b", Arg "b" (DUnit (1 % 2)) 0)
             ]
         , wArgAttacks = Map.fromList
             [ ("a", ["b"])
@@ -206,7 +212,7 @@ main = do
   let sigma = runFixedPoint twoAtom
   let sa = unDUnit (sigma Map.! "a")
   let sb = unDUnit (sigma Map.! "b")
-  if abs (sa - 0.5) < 1e-6 && abs (sb - 0.5) < 1e-6
+  if sa == 1 % 2 && sb == 1 % 2
     then putStrLn "runFixedPoint symmetric:      PASS"
     else putStrLn ("runFixedPoint symmetric: FAIL (a=" ++ show sa ++ " b=" ++ show sb ++ ")")
 

@@ -13,8 +13,8 @@
 -- is the instance from equation (3) of [7] with f(x) = x (identity scoring).
 --
 -- Convergence is guaranteed by [7] via monotone iteration on the complete
--- lattice ([0,1]^n, ≤). Floating-point equality is unsafe as a termination
--- guard; we use tolerance 1e-10 (closeEnough).
+-- lattice ([0,1]^n, ≤). With Rational arithmetic, exact equality (==) is a
+-- safe and correct termination guard; no ε-tolerance is needed.
 module FixedPoint
   ( hCategoriser
   , runFixedPoint
@@ -46,10 +46,16 @@ hCategoriser (DUnit w) attackerScores
 --
 -- Initialise σ⁰(aᵢ) = argWeight aᵢ (the BETO-derived initial weight).
 -- Each iteration applies 'hCategoriser' synchronously to all arguments.
--- Terminates when max pointwise change < 1e-10 (tolerance-based convergence).
+-- Terminates when σ' == σ (exact equality on Rational values).
 --
--- For an argument with no attackers, hCategoriser w [] = w / (w + 0) = 1.0:
--- unattacked positive-weight arguments converge to full credence (1.0),
+-- Exact equality is correct here: Rational arithmetic is deterministic and
+-- rounding-free, so two maps that are genuinely equal will compare equal
+-- without any ε smearing.  The old tolerance (1e-10) was a workaround for
+-- IEEE-754 drift; it is not needed and not appropriate under Rational.
+-- (Flaw 3 of architecture_flaws.md resolved.)
+--
+-- For an argument with no attackers, hCategoriser w [] = w / (w + 0) = 1:
+-- unattacked positive-weight arguments converge to full credence (1),
 -- regardless of their initial weight. This is the correct semantics of
 -- Definition 2.7 of [7]: no attack pressure = maximum acceptability degree.
 runFixedPoint :: WArg -> GradualSemantics
@@ -61,8 +67,8 @@ runFixedPoint warg = converge 10000 initialSigma
     converge :: Int -> GradualSemantics -> GradualSemantics
     converge 0 sigma = sigma
     converge n sigma
-      | closeEnough sigma' sigma = sigma'
-      | otherwise                = converge (n - 1) sigma'
+      | sigma' == sigma = sigma'
+      | otherwise       = converge (n - 1) sigma'
       where
         sigma' = Map.mapWithKey (step sigma) sigma
 
@@ -79,11 +85,6 @@ runFixedPoint warg = converge 10000 initialSigma
           attackerScores =
             map (\aid -> Map.findWithDefault (DUnit 0) aid sigma) attackerIds
       in hCategoriser w attackerScores
-
-    closeEnough :: GradualSemantics -> GradualSemantics -> Bool
-    closeEnough s1 s2 =
-      all (\(DUnit a, DUnit b) -> abs (a - b) < 1e-10)
-          (Map.elems (Map.intersectionWith (,) s1 s2))
 
 -- ---------------------------------------------------------------------------
 -- Perplexity attenuation gate

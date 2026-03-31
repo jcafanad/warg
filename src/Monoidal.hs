@@ -83,7 +83,7 @@ instance Arbitrary WArg where
     -- (the unit law properties do not need disjointness, so we allow overlap
     -- and test only the structural properties here).
     let ids = [ T.pack ("arg_" <> show (i :: Int)) | i <- [0 .. n - 1] ]
-    weights <- mapM (\_ -> DUnit . min 1.0 . abs <$> (arbitrary :: Gen Double)) ids
+    weights <- mapM (\_ -> arbitrary :: Gen DUnit) ids
     perps   <- mapM (\_ -> abs <$> (arbitrary :: Gen Double)) ids
     let args = Map.fromList
           [ (iid, Arg { argId = iid, argWeight = w, argPerplexity = p })

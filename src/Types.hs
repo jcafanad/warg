@@ -155,7 +155,10 @@ buildWArg req = WArg
   where
     mkArg a = Arg
       { argId         = waName a
-      , argWeight     = DUnit (max 0.0 (min 1.0 (waInitialWeight a)))
+      -- toRational converts the IEEE-754 Double from the wire payload to the
+      -- exact Rational it represents (all finite Doubles are rational).
+      -- This is the only boundary where Double crosses into the DUnit world.
+      , argWeight     = DUnit (max 0 (min 1 (toRational (waInitialWeight a))))
       , argPerplexity = waPerplexity a
       }
     attacks =

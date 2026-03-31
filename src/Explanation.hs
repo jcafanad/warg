@@ -72,6 +72,6 @@ explain warg sigma epsilon =
           [ (aid, s)
           | aid <- attackerIds
           , let s = Map.findWithDefault (DUnit 0) aid sigma
-          , unDUnit s > epsilon
+          , unDUnit s > toRational epsilon
           ]
   ]

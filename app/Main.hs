@@ -61,7 +61,10 @@ processRequest req =
       attMap    = runFixedPointWithAttenuation warg threshold
   in [ WireResult
          { wrName          = name
-         , wrGradualWeight = unDUnit gw
+         -- fromRational converts the exact Rational back to Double for the
+         -- wire output (JSON). The wire format specifies gradual_weight as a
+         -- float; this is the only place Rational re-crosses the Double boundary.
+         , wrGradualWeight = fromRational (unDUnit gw)
          , wrAttenuated    = att
          }
      | (name, (gw, att)) <- Map.toList attMap
