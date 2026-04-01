@@ -16,6 +16,13 @@ import DUnit
   , prop_diff_involution
   , DUnit(..)
   )
+import DPosetTensor
+  ( prop_tensor_left_unit
+  , prop_tensor_right_unit
+  , prop_tensor_assoc
+  , prop_tensor_comm
+  , prop_tensor_zero
+  )
 import Monoidal (prop_leftUnit, prop_rightUnit, wargPlus, checkDisjoint)
 import FixedPoint (hCategoriser, runFixedPoint, runFixedPointWithAttenuation)
 import Types (Arg(..), WArg(..))
@@ -172,6 +179,13 @@ main = do
   putStr "prop_diff_upper_bound:  " >> quickCheck prop_diff_upper_bound
   putStr "prop_diff_antitone:     " >> quickCheck prop_diff_antitone
   putStr "prop_diff_involution:   " >> quickCheck prop_diff_involution
+
+  putStrLn "=== D-Poset tensor product (monoidal laws) ==="
+  putStr "prop_tensor_left_unit:  " >> quickCheck prop_tensor_left_unit
+  putStr "prop_tensor_right_unit: " >> quickCheck prop_tensor_right_unit
+  putStr "prop_tensor_assoc:      " >> quickCheck prop_tensor_assoc
+  putStr "prop_tensor_comm:       " >> quickCheck prop_tensor_comm
+  putStr "prop_tensor_zero:       " >> quickCheck prop_tensor_zero
 
   putStrLn "=== Monoidal unit laws ==="
   putStr "prop_leftUnit:          " >> quickCheck prop_leftUnit
