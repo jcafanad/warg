@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- |
--- warg test suite: QuickCheck D-Poset laws, cocartesian unit laws, and
--- FixedPoint / attenuation properties.
+-- warg test suite: QuickCheck D-Poset laws, cocartesian unit laws,
+-- FixedPoint / attenuation properties, and Year 1 actegory laws.
 module Main (main) where
 
 import Data.Ratio ((%))
@@ -27,6 +27,33 @@ import Monoidal (prop_leftUnit, prop_rightUnit, wargPlus, checkDisjoint)
 import FixedPoint (hCategoriser, runFixedPoint, runFixedPointWithAttenuation)
 import Types (Arg(..), WArg(..))
 import Data.Either (isRight)
+
+-- Year 1: Cospan (H(AArg) horizontal 1-cells) and DActegory (Proposition 1)
+import Cospan
+  ( prop_cospan_leftleg_total
+  , prop_cospan_rightleg_total
+  , prop_pushout_left_commutes
+  , prop_pushout_right_commutes
+  )
+import DActegory
+  ( prop_unitor_law
+  , prop_multiplicator_law
+  , prop_unitor_left_triangle
+  , prop_unitor_right_triangle
+  )
+
+-- ---------------------------------------------------------------------------
+-- Orphan: Arbitrary Data.Text.Text
+--
+-- QuickCheck has no built-in Arbitrary instance for Data.Text.Text.
+-- We derive one from the Arbitrary String instance via T.pack.
+-- The -Wno-orphans flag on the test-suite stanza in warg.cabal suppresses
+-- the orphan warning; this is standard practice for test-only instances.
+-- ---------------------------------------------------------------------------
+
+instance Arbitrary T.Text where
+  arbitrary = T.pack <$> arbitrary
+  shrink t  = T.pack <$> shrink (T.unpack t)
 
 -- ---------------------------------------------------------------------------
 -- Disjoint-triple generator (roadmap §8.4)
@@ -237,5 +264,17 @@ main = do
     if prop_attenuation_gate_below_threshold then "PASS" else "FAIL"
   putStrLn $ "attenuation at threshold:     " ++
     if prop_attenuation_gate_at_threshold    then "PASS" else "FAIL"
+
+  putStrLn "=== Year 1: Cospan laws (H(AArg) horizontal 1-cells) ==="
+  putStr "prop_cospan_leftleg_total:    " >> quickCheck prop_cospan_leftleg_total
+  putStr "prop_cospan_rightleg_total:   " >> quickCheck prop_cospan_rightleg_total
+  putStr "prop_pushout_left_commutes:   " >> quickCheck prop_pushout_left_commutes
+  putStr "prop_pushout_right_commutes:  " >> quickCheck prop_pushout_right_commutes
+
+  putStrLn "=== Year 1: D-actegory laws (Proposition 1) ==="
+  putStr "prop_unitor_law:              " >> quickCheck prop_unitor_law
+  putStr "prop_multiplicator_law:       " >> quickCheck prop_multiplicator_law
+  putStr "prop_unitor_left_triangle:    " >> quickCheck prop_unitor_left_triangle
+  putStr "prop_unitor_right_triangle:   " >> quickCheck prop_unitor_right_triangle
 
   putStrLn "=== All tests done ==="

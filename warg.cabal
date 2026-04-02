@@ -22,6 +22,8 @@ library
                     , Monoidal
                     , FixedPoint
                     , Explanation
+                    , Cospan
+                    , DActegory
     build-depends:    base      ^>=4.18.3.0
                     , aeson     >= 2.0
                     , text      >= 2.0
@@ -54,20 +56,3 @@ test-suite warg-test
     hs-source-dirs:   test
     default-language: GHC2021
     ghc-options:      -Wno-orphans
-
-executable warg-cat
-    import:           warnings
-    main-is:          Main.hs
-    build-depends:    base       ^>=4.18.3.0
-                    , warg
-                    , aeson      >= 2.0
-                    , bytestring >= 0.11
-                    , text       >= 2.0
-                    , containers >= 0.6
-    hs-source-dirs:   app-cat, src-cat
-    other-modules:    FixedPoint
-                    , Optics
-                    , Cospan
-                    , DUnit
-                    , WArg
-    default-language: GHC2021
