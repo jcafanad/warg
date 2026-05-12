@@ -61,6 +61,24 @@
 -- See: Jacobs & Mandemaker (2012), "Coreflections in algebraic quantum logic",
 -- Foundations of Physics 42, 932–958. [13]
 -- See: Afanador (2025), ACT 2025 abstract, Proposition 1. [0]
+--
+-- = Generalisation note
+--
+-- This module is intentionally concrete: ⊗ = multiplication on ℚ, j = 1.
+-- To generalise to a different D-Poset, replace 'dTensor' and 'dUnit' and
+-- re-verify the five 'prop_tensor_*' laws — they are the abstraction boundary.
+-- Two natural targets:
+--
+--   * [0,1]^n (Remark 4.3): pointwise multiplication; j = (1,…,1).
+--     Commutative. Requires 'DUnit' to carry a vector rather than a scalar.
+--
+--   * Effects on a Hilbert space with the Lüders sequential product
+--     A ∘ B = √A B √A (Gudder & Greechie 2002, "Sequential products on
+--     effect algebras"): non-commutative. 'prop_tensor_comm' would fail;
+--     'dTensor' would need two ordered variants (left- and right-sequential).
+--
+-- Downstream dependents: 'DActegory' ('scaleWArg') and 'Para' ('paraCompose',
+-- 'evalPara').
 module DPosetTensor
   ( dTensor
   , dUnit

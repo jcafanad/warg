@@ -42,6 +42,17 @@ import DActegory
   , prop_unitor_right_triangle
   )
 
+-- Year 1: Para_bullet(WArg) — Proposition 2
+import Para
+  ( prop_para_left_unit
+  , prop_para_right_unit
+  , prop_para_compose_associative
+  , prop_para_vcomp_identity
+  , prop_para_horizontal_param_tensor
+  , prop_scalemorphism_equivariant
+  , prop_para_decomposition_equivalence
+  )
+
 -- ---------------------------------------------------------------------------
 -- Orphan: Arbitrary Data.Text.Text
 --
@@ -75,6 +86,30 @@ genDisjointTriple = do
   w2 <- genPrefixed "b_"
   w3 <- genPrefixed "c_"
   return (w1, w2, w3)
+
+-- | Generates WArg with an acyclic attack graph.
+-- Attacks only go from higher-indexed args to lower-indexed args,
+-- so the L-O-Y fixed point converges in at most n iterations.
+genAcyclicWArg :: Gen WArg
+genAcyclicWArg = do
+  n <- chooseInt (0, 6)
+  let ids = [ T.pack ("a" <> show (i :: Int)) | i <- [0 .. n - 1] ]
+  weights <- mapM (\_ -> arbitrary :: Gen DUnit) ids
+  perps   <- mapM (\_ -> abs <$> (arbitrary :: Gen Double)) ids
+  let args = Map.fromList
+        [ (iid, Arg { argId = iid, argWeight = w, argPerplexity = p })
+        | (iid, w, p) <- zip3 ids weights perps
+        ]
+  attacks <- fmap (Map.fromListWith (<>) . concat) $
+    mapM (\(i, src) -> do
+        let predecessors = take i ids
+        if null predecessors
+          then return []
+          else do
+            targets <- sublistOf predecessors
+            return [(tgt, [src]) | tgt <- targets]
+    ) (zip [0 :: Int ..] ids)
+  return (WArg args attacks)
 
 genPrefixed :: String -> Gen WArg
 genPrefixed prefix = do
@@ -196,6 +231,38 @@ prop_attenuation_gate_at_threshold =
     attMap = runFixedPointWithAttenuation warg threshold
 
 -- ---------------------------------------------------------------------------
+-- Fixed-point structural invariant (formerly in Para.hs)
+--
+-- Relocated here because liftFixedPoint / runFixedPoint is D-invariant
+-- (0-homogeneous), not D-equivariant (1-homogeneous): σ*(d•w) = σ*(w).
+-- D-equivariance is the membership condition for Para•(WArg) 1-cells;
+-- D-invariance is its dual failure. liftFixedPoint lives in C (plain WArg
+-- morphisms), not Para•(WArg). Its principled home is
+-- Para(Prism(WArg, Smooth_{[0,1]})) — Year-2 work.
+--
+-- This property tests the genuine structural invariant directly via
+-- runFixedPoint, with no Para dependency.
+-- ---------------------------------------------------------------------------
+
+-- | σ* satisfies the h-categoriser fixed-point equation against the original
+-- input weights. Passes under exact Rational arithmetic on acyclic graphs.
+prop_hcat_satisfies_fixedpoint :: WArg -> Bool
+prop_hcat_satisfies_fixedpoint warg =
+  let sigma = runFixedPoint warg
+      check atomId =
+        case Map.lookup atomId (wArgArgs warg) of
+          Nothing  -> True
+          Just arg ->
+            let w              = argWeight arg
+                attackerIds    = Map.findWithDefault [] atomId (wArgAttacks warg)
+                attackerScores = map (\aid -> Map.findWithDefault (DUnit 0) aid sigma)
+                                     attackerIds
+                expected       = hCategoriser w attackerScores
+                actual         = Map.findWithDefault (DUnit 0) atomId sigma
+            in actual == expected
+  in all check (Map.keys (wArgArgs warg))
+
+-- ---------------------------------------------------------------------------
 -- Main
 -- ---------------------------------------------------------------------------
 
@@ -257,6 +324,9 @@ main = do
     then putStrLn "runFixedPoint symmetric:      PASS"
     else putStrLn ("runFixedPoint symmetric: FAIL (a=" ++ show sa ++ " b=" ++ show sb ++ ")")
 
+  -- σ* satisfies the fixed-point equation (D-invariant morphism; not Para)
+  putStr "prop_hcat_satisfies_fixedpoint: " >> quickCheck (forAll genAcyclicWArg prop_hcat_satisfies_fixedpoint)
+
   putStrLn "=== Attenuation gate ==="
   putStrLn $ "attenuation above threshold:  " ++
     if prop_attenuation_gate_above_threshold then "PASS" else "FAIL"
@@ -276,5 +346,14 @@ main = do
   putStr "prop_multiplicator_law:       " >> quickCheck prop_multiplicator_law
   putStr "prop_unitor_left_triangle:    " >> quickCheck prop_unitor_left_triangle
   putStr "prop_unitor_right_triangle:   " >> quickCheck prop_unitor_right_triangle
+
+  putStrLn "=== Year 1: Para_bullet(WArg) laws (Proposition 2) ==="
+  putStr "prop_para_left_unit:                 " >> quickCheck prop_para_left_unit
+  putStr "prop_para_right_unit:                " >> quickCheck prop_para_right_unit
+  putStr "prop_para_compose_associative:       " >> quickCheck prop_para_compose_associative
+  putStr "prop_para_horizontal_param_tensor:   " >> quickCheck prop_para_horizontal_param_tensor
+  putStr "prop_para_vcomp_identity:            " >> quickCheck prop_para_vcomp_identity
+  putStr "prop_scalemorphism_equivariant:      " >> quickCheck prop_scalemorphism_equivariant
+  putStr "prop_para_decomposition_equivalence: " >> quickCheck prop_para_decomposition_equivalence
 
   putStrLn "=== All tests done ==="

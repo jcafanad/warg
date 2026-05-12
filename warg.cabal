@@ -24,7 +24,8 @@ library
                     , Explanation
                     , Cospan
                     , DActegory
-    build-depends:    base      ^>=4.18.3.0
+                    , Para
+    build-depends:    base      >=4.18.3.0
                     , aeson     >= 2.0
                     , text      >= 2.0
                     , containers >= 0.6
@@ -35,7 +36,7 @@ library
 executable warg
     import:           warnings
     main-is:          Main.hs
-    build-depends:    base       ^>=4.18.3.0
+    build-depends:    base >=4.18.3.0
                     , warg
                     , aeson      >= 2.0
                     , bytestring >= 0.11
@@ -48,7 +49,7 @@ test-suite warg-test
     import:           warnings
     type:             exitcode-stdio-1.0
     main-is:          Spec.hs
-    build-depends:    base       ^>=4.18.3.0
+    build-depends:    base >=4.18.3.0
                     , warg
                     , QuickCheck >= 2.14
                     , containers >= 0.6
