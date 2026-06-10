@@ -121,10 +121,18 @@ instance FromJSON WireRequest where
 -- The output is a flat JSON array of these, NOT an object with a "results"
 -- key (which is the roadmap §4 sketch). The Python side does json.loads and
 -- iterates directly.
+--
+-- wrAttackers: attacker subgraph for XAI. Inclusion threshold is σ* > DUnit 0
+-- (the categorical natural bottom of the D-Poset), enforced inside
+-- Explanation.explain — see that module for the full rationale. In brief:
+-- attenuation (corpus_max_perplexity) and ε-filtering are non-commensurable
+-- silencings; collapsing both into a single threshold here would erase that
+-- non-identity. The orchestrator owns any ε > 0 it wishes to apply.
 data WireResult = WireResult
   { wrName          :: Text
   , wrGradualWeight :: Double
   , wrAttenuated    :: Bool
+  , wrAttackers     :: [(Text, Double)]  -- (attacker_id, σ*); σ* > 0, see Explanation.hs
   } deriving (Show, Generic)
 
 instance ToJSON WireResult where
@@ -132,6 +140,10 @@ instance ToJSON WireResult where
     [ "name"           .= wrName r
     , "gradual_weight" .= wrGradualWeight r
     , "attenuated"     .= wrAttenuated r
+    , "attackers"      .=
+        [ object ["attacker_id" .= aid, "attacker_sigma" .= s]
+        | (aid, s) <- wrAttackers r
+        ]
     ]
 
 -- ---------------------------------------------------------------------------

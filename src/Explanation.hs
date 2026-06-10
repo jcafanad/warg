@@ -54,17 +54,25 @@ instance ToJSON Explanation where
         ]
     ]
 
--- | Build ε-filtered explanations from the fixed-point result.
+-- | Build explanations from the fixed-point result.
 --
 -- For each argument in the framework:
 --   1. Look up its σ* in the GradualSemantics map.
 --   2. Collect its attackers (from wArgAttacks, per-target encoding).
---   3. Filter attackers whose σ* ≤ ε (negligible attack pressure).
+--   3. Retain only attackers with σ* > 0 (the natural bottom of the D-Poset).
 --
--- Arguments not in the semantics map are skipped (should not occur in
--- well-formed input, but defensive).
-explain :: WArg -> GradualSemantics -> Double -> [Explanation]
-explain warg sigma epsilon =
+-- The ε threshold is fixed at DUnit 0 — the categorical natural bottom — and
+-- is not a parameter. Filtering at any ε > 0 is cosmetic structural truncation
+-- (discarding structurally present but weak attack pressure) and is
+-- non-commensurable with attenuation (corpus_max_perplexity), which marks
+-- distributional epistemic imposition. Collapsing both into a single threshold
+-- here would erase that non-identity. Any ε > 0 filtering belongs to the
+-- orchestration layer, which owns the readability/precision trade-off.
+--
+-- Arguments not in the semantics map are skipped (defensive; should not occur
+-- in well-formed input validated by validateWArg).
+explain :: WArg -> GradualSemantics -> [Explanation]
+explain warg sigma =
   [ Explanation atomId score significantAttackers
   | (atomId, score) <- Map.toList sigma
   , let attackerIds = Map.findWithDefault [] atomId (wArgAttacks warg)
@@ -72,6 +80,6 @@ explain warg sigma epsilon =
           [ (aid, s)
           | aid <- attackerIds
           , let s = Map.findWithDefault (DUnit 0) aid sigma
-          , unDUnit s > toRational epsilon
+          , s > DUnit 0
           ]
   ]
