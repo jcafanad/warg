@@ -1,13 +1,31 @@
 cabal-version:   3.16
 name:            warg
 version:         0.1.0.0
+synopsis:        Gradual semantics of weighted abstract argumentation with typed attenuation
+description:
+    A solver for the h-categoriser gradual semantics of weighted abstract
+    argumentation. JSON: weighted arguments and an attack relation, and for
+    each argument an acceptability degree, the attacker subgraph that produced
+    it, and a flag recording whether the score was attenuated rather than
+    defeated. Convergence is Theorem 3.20 of Libman, Oren and Yun, by nested
+    intervals over exact @Rational@ arithmetic. On cyclic frameworks the fixed
+    point is generically irrational, so the equality guard is unreachable and
+    the run reports @step_cap_reached@ rather than claiming a fixed point it did
+    not find. A framework with an argument id that carries no weight is refused,
+    not repaired.
 license:         GPL-3.0-or-later
 license-file:    LICENSE
 author:          Juan Afanador
 maintainer:      jafanad@gmail.com
 copyright:       2026 Juan Afanador
+category:        AI, Logic
 build-type:      Simple
 extra-doc-files: CHANGELOG.md
+tested-with:     GHC == 9.6.7
+
+source-repository head
+    type:     git
+    location: https://github.com/jcafanad/warg
 
 -- Year 0 implementation: gradual semantics of abstract argumentation.
 -- Categorical structure (D-actegory, Para•(WArg)) deferred to Year 1.
@@ -27,23 +45,23 @@ library
                     , Cospan
                     , DActegory
                     , Para
-    build-depends:    base      >=4.18.3.0
-                    , aeson     >= 2.0
-                    , text      >= 2.0
-                    , containers >= 0.6
-                    , QuickCheck >= 2.14
+    build-depends:    base       >= 4.18 && < 5
+                    , aeson      >= 2.0  && < 2.4
+                    , text       >= 2.0  && < 2.2
+                    , containers >= 0.6  && < 0.8
+                    , QuickCheck >= 2.14 && < 2.19
     hs-source-dirs:   src
     default-language: GHC2021
 
 executable warg
     import:           warnings
     main-is:          Main.hs
-    build-depends:    base >=4.18.3.0
+    build-depends:    base       >= 4.18 && < 5
                     , warg
-                    , aeson      >= 2.0
-                    , bytestring >= 0.11
-                    , text       >= 2.0
-                    , containers >= 0.6
+                    , aeson      >= 2.0  && < 2.4
+                    , bytestring >= 0.11 && < 0.13
+                    , text       >= 2.0  && < 2.2
+                    , containers >= 0.6  && < 0.8
     hs-source-dirs:   app
     default-language: GHC2021
 
@@ -51,11 +69,11 @@ test-suite warg-test
     import:           warnings
     type:             exitcode-stdio-1.0
     main-is:          Spec.hs
-    build-depends:    base >=4.18.3.0
+    build-depends:    base       >= 4.18 && < 5
                     , warg
-                    , QuickCheck >= 2.14
-                    , containers >= 0.6
-                    , text       >= 2.0
+                    , QuickCheck >= 2.14 && < 2.19
+                    , containers >= 0.6  && < 0.8
+                    , text       >= 2.0  && < 2.2
     hs-source-dirs:   test
     default-language: GHC2021
     ghc-options:      -Wno-orphans
