@@ -1,0 +1,7 @@
+# Build artefacts.
+
+dist-newstyle/
+.cabal/
+*.hi
+*.o
+.ghc.environment.*
