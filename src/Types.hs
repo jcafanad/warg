@@ -13,8 +13,9 @@
 --     "atoms": [{ "name": ..., "initial_weight": ..., "weight": ...,
 --                 "perplexity": ..., "attacks": [...] }] }
 --
--- Wire format (stdout — flat JSON array, NOT an object):
---   [{ "name": ..., "gradual_weight": ..., "attenuated": ... }, ...]
+-- Wire format (stdout, an object carrying the run's status):
+--   { "status": ..., "steps": ..., "results": [{ "name": ...,
+--     "gradual_weight": ..., "attenuated": ..., "attackers": [...] }] }
 --
 -- Internal types ('Arg', 'WArg', 'GradualSemantics') follow the roadmap §3.2
 -- type sketches and are not directly serialised.
@@ -31,6 +32,8 @@ module Types
   , buildWArg
     -- * Validation
   , validateWArg
+  , FixedPointStatus(..)
+  , WireResponse(..)
   ) where
 
 import Data.Aeson
@@ -116,11 +119,55 @@ instance FromJSON WireRequest where
       <$> o .:  "corpus_max_perplexity"
       <*> o .:  "atoms"
 
+-- | Why the fixed-point iteration stopped.
+--
+-- The names match 'Equilibrium.Bracket.Status' in equilibrium-optics where the
+-- concept is the same, so the two implementations can be read against each
+-- other. What they do not share is a constructor for a rejected framework, and
+-- that absence is deliberate: see 'validateWArg'. A framework whose membership
+-- is not settled never reaches the iteration, so refusing it is not a status
+-- the computation can report. It is exit 1 and a message on stderr, before any
+-- response object exists.
+--
+-- For the same reason there is no frontier in this wire format. warg's
+-- argumentation frameworks are closed, so there is nothing at the horizon to
+-- report; an open-frame variant would need a field here that this one has no
+-- use for.
+data FixedPointStatus
+  = Converged       -- ^ σ' == σ was reached; the values are the fixed point
+  | StepCapReached  -- ^ the cap was exhausted; the values are iterates, not the fixed point
+  deriving (Eq, Show, Generic)
+
+instance ToJSON FixedPointStatus where
+  toJSON Converged      = "converged"
+  toJSON StepCapReached = "step_cap_reached"
+
+-- | The whole response: the status of the run, and the per-atom results.
+--
+-- This replaces the flat array the wire format used to emit. Convergence is a
+-- property of the run and not of any one argument, so a per-atom field would
+-- have recorded a global fact at the wrong level of the structure. The array
+-- is now under "results"; roadmap §4 specified this shape and the flat array
+-- was the deviation.
+data WireResponse = WireResponse
+  { wsStatus  :: FixedPointStatus
+  , wsSteps   :: Int
+  , wsResults :: [WireResult]
+  } deriving (Show, Generic)
+
+instance ToJSON WireResponse where
+  toJSON r = object
+    [ "status"  .= wsStatus r
+    , "steps"   .= wsSteps r
+    , "results" .= wsResults r
+    ]
+
 -- | A single result in the JSON wire format (Haskell → Python).
 --
--- The output is a flat JSON array of these, NOT an object with a "results"
--- key (which is the roadmap §4 sketch). The Python side does json.loads and
--- iterates directly.
+-- These are carried in the "results" field of a 'WireResponse'. The output
+-- was a flat array of these until the run's status was added; a status has no
+-- place to live in an array, and no per-atom field is the right home for a
+-- property of the whole iteration.
 --
 -- wrAttackers: attacker subgraph for XAI. Inclusion threshold is σ* > DUnit 0
 -- (the categorical natural bottom of the D-Poset), enforced inside

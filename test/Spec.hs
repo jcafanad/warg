@@ -186,7 +186,7 @@ prop_attenuation_gate_above_threshold =
           ]
       , wArgAttacks = Map.empty
       }
-    attMap = runFixedPointWithAttenuation warg threshold
+    (attMap, _, _) = runFixedPointWithAttenuation warg threshold
 
 -- | Attenuation gate leaves weight intact and sets attenuated=False below threshold.
 prop_attenuation_gate_below_threshold :: Bool
@@ -207,7 +207,7 @@ prop_attenuation_gate_below_threshold =
           ]
       , wArgAttacks = Map.empty
       }
-    attMap = runFixedPointWithAttenuation warg threshold
+    (attMap, _, _) = runFixedPointWithAttenuation warg threshold
 
 -- | Attenuation gate smoke test: atom exactly AT the threshold is NOT attenuated.
 --
@@ -228,7 +228,7 @@ prop_attenuation_gate_at_threshold =
           ]
       , wArgAttacks = Map.empty
       }
-    attMap = runFixedPointWithAttenuation warg threshold
+    (attMap, _, _) = runFixedPointWithAttenuation warg threshold
 
 -- ---------------------------------------------------------------------------
 -- Fixed-point structural invariant (formerly in Para.hs)
@@ -248,7 +248,7 @@ prop_attenuation_gate_at_threshold =
 -- input weights. Passes under exact Rational arithmetic on acyclic graphs.
 prop_hcat_satisfies_fixedpoint :: WArg -> Bool
 prop_hcat_satisfies_fixedpoint warg =
-  let sigma = runFixedPoint warg
+  let (sigma, _, _) = runFixedPoint warg
       check atomId =
         case Map.lookup atomId (wArgArgs warg) of
           Nothing  -> True
@@ -317,7 +317,7 @@ main = do
             , ("b", ["a"])
             ]
         }
-  let sigma = runFixedPoint twoAtom
+  let (sigma, _, _) = runFixedPoint twoAtom
   let sa = unDUnit (sigma Map.! "a")
   let sb = unDUnit (sigma Map.! "b")
   if sa == 1 % 2 && sb == 1 % 2

@@ -35,7 +35,7 @@ import Data.Map.Strict (Map)
 import Data.Text (Text)
 
 import DUnit (DUnit(..))
-import Types (Arg(..), WArg(..), GradualSemantics)
+import Types (Arg(..), WArg(..), GradualSemantics, FixedPointStatus(..))
 
 -- | One application of the h-categoriser scoring function.
 --
@@ -67,17 +67,26 @@ hCategoriser (DUnit w) attackerScores
 -- unattacked positive-weight arguments converge to full credence (1),
 -- regardless of their initial weight. This is the correct semantics of
 -- Definition 2.7 of [7]: no attack pressure = maximum acceptability degree.
-runFixedPoint :: WArg -> GradualSemantics
-runFixedPoint warg = converge 10000 initialSigma
+-- The status is returned rather than discarded. Previously this function
+-- stopped at the cap and returned the iterate with no indication, so a caller
+-- could not tell a fixed point from a run that had exhausted its budget. On a
+-- cyclic framework the equality guard is unreachable, because the fixed point
+-- is then generically irrational, so that silence was not a corner case: it
+-- was the normal outcome for exactly the frameworks the theory is about.
+runFixedPoint :: WArg -> (GradualSemantics, FixedPointStatus, Int)
+runFixedPoint warg = converge 0 initialSigma
   where
+    stepCap :: Int
+    stepCap = 10000
+
     initialSigma :: GradualSemantics
     initialSigma = Map.map argWeight (wArgArgs warg)
 
-    converge :: Int -> GradualSemantics -> GradualSemantics
-    converge 0 sigma = sigma
-    converge n sigma
-      | sigma' == sigma = sigma'
-      | otherwise       = converge (n - 1) sigma'
+    converge :: Int -> GradualSemantics -> (GradualSemantics, FixedPointStatus, Int)
+    converge k sigma
+      | k >= stepCap    = (sigma, StepCapReached, k)
+      | sigma' == sigma = (sigma', Converged, k + 1)
+      | otherwise       = converge (k + 1) sigma'
       where
         sigma' = Map.mapWithKey (step sigma) sigma
 
@@ -138,6 +147,8 @@ applyAttenuationGate warg threshold sigma =
 runFixedPointWithAttenuation
   :: WArg
   -> Double                     -- ^ corpus_max_perplexity
-  -> Map Text (DUnit, Bool)     -- ^ (σ*, attenuated) per atom
+  -> (Map Text (DUnit, Bool), FixedPointStatus, Int)
+                                -- ^ ((σ*, attenuated) per atom, status, steps)
 runFixedPointWithAttenuation warg threshold =
-  applyAttenuationGate warg threshold (runFixedPoint warg)
+  let (sigma, st, k) = runFixedPoint warg
+  in (applyAttenuationGate warg threshold sigma, st, k)

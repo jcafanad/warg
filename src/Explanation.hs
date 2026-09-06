@@ -10,10 +10,10 @@
 -- The coupling is in the pipeline orchestrator, not in this module.
 --
 -- The 'Explanation' type is NOT used in the wire output directly. The wire
--- output is a flat array of 'WireResult' (see Types). 'Explanation' is
--- used internally for attacker subgraph construction, and its fields are
--- inlined into 'WireResult' by Main. This design keeps the wire format
--- minimal and the internal type expressive.
+-- output is a 'WireResponse' whose "results" carry 'WireResult' (see Types).
+-- 'Explanation' is used internally for attacker subgraph construction, and its
+-- fields are inlined into 'WireResult' by Main. This design keeps the wire
+-- format minimal and the internal type expressive.
 --
 -- Note on the wire format for 'attenuated': the Python side (warg_ffi.py)
 -- checks result.attenuated but does not check per-attacker scores in the

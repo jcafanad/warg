@@ -113,7 +113,7 @@ run_paramo_defended() {
     
     # Check 1: evidencia_hidrica = 1.0 (unattacked)
     local evidencia_weight
-    evidencia_weight=$(echo "$output" | jq -r '.[] | select(.name=="evidencia_hidrica") | .gradual_weight')
+    evidencia_weight=$(echo "$output" | jq -r '.results[] | select(.name=="evidencia_hidrica") | .gradual_weight')
     if [ "$evidencia_weight" = "1" ] || [ "$evidencia_weight" = "1.0" ]; then
         log_success "evidencia_hidrica converged to σ*=1.0 (unattacked argument)"
     else
@@ -123,7 +123,7 @@ run_paramo_defended() {
     
     # Check 2: estado_concesion defeated (σ* < 0.5)
     local estado_weight
-    estado_weight=$(echo "$output" | jq -r '.[] | select(.name=="estado_concesion") | .gradual_weight')
+    estado_weight=$(echo "$output" | jq -r '.results[] | select(.name=="estado_concesion") | .gradual_weight')
     if command -v bc &> /dev/null; then
         if (( $(echo "$estado_weight < 0.5" | bc -l) )); then
             log_success "estado_concesion defeated (σ*=$estado_weight < 0.5)"
@@ -137,7 +137,7 @@ run_paramo_defended() {
     
     # Check 3: paramo_territorio reinstated (σ* > 0.5)
     local paramo_weight
-    paramo_weight=$(echo "$output" | jq -r '.[] | select(.name=="paramo_territorio") | .gradual_weight')
+    paramo_weight=$(echo "$output" | jq -r '.results[] | select(.name=="paramo_territorio") | .gradual_weight')
     if command -v bc &> /dev/null; then
         if (( $(echo "$paramo_weight > 0.5" | bc -l) )); then
             log_success "paramo_territorio reinstated (σ*=$paramo_weight > 0.5)"
@@ -151,7 +151,7 @@ run_paramo_defended() {
     
     # Check 4: No atoms attenuated (all perplexity < threshold)
     local attenuated_count
-    attenuated_count=$(echo "$output" | jq '[.[] | select(.attenuated==true)] | length')
+    attenuated_count=$(echo "$output" | jq '[.results[] | select(.attenuated==true)] | length')
     if [ "$attenuated_count" -eq 0 ]; then
         log_success "No atoms attenuated (all λ_⊥ < 21.769)"
     else
@@ -203,8 +203,8 @@ run_paramo_attenuation() {
     
     # Check 1: recurso_hidrico_estado = 1.0, not attenuated
     local recurso_weight recurso_attenuated
-    recurso_weight=$(echo "$output" | jq -r '.[] | select(.name=="recurso_hidrico_estado") | .gradual_weight')
-    recurso_attenuated=$(echo "$output" | jq -r '.[] | select(.name=="recurso_hidrico_estado") | .attenuated')
+    recurso_weight=$(echo "$output" | jq -r '.results[] | select(.name=="recurso_hidrico_estado") | .gradual_weight')
+    recurso_attenuated=$(echo "$output" | jq -r '.results[] | select(.name=="recurso_hidrico_estado") | .attenuated')
     if [ "$recurso_weight" = "1" ] || [ "$recurso_weight" = "1.0" ]; then
         log_success "recurso_hidrico_estado: σ*=1.0 (λ_⊥ < threshold)"
     else
@@ -220,8 +220,8 @@ run_paramo_attenuation() {
     
     # Check 2: poner_a_valer_trabajo = 1.0, not attenuated (strict inequality test)
     local poner_weight poner_attenuated
-    poner_weight=$(echo "$output" | jq -r '.[] | select(.name=="poner_a_valer_trabajo") | .gradual_weight')
-    poner_attenuated=$(echo "$output" | jq -r '.[] | select(.name=="poner_a_valer_trabajo") | .attenuated')
+    poner_weight=$(echo "$output" | jq -r '.results[] | select(.name=="poner_a_valer_trabajo") | .gradual_weight')
+    poner_attenuated=$(echo "$output" | jq -r '.results[] | select(.name=="poner_a_valer_trabajo") | .attenuated')
     if [ "$poner_weight" = "1" ] || [ "$poner_weight" = "1.0" ]; then
         log_success "poner_a_valer_trabajo: σ*=1.0 (λ_⊥=threshold, strict inequality)"
     else
@@ -237,8 +237,8 @@ run_paramo_attenuation() {
     
     # Check 3: ontologia_paramuna = 0.0, attenuated
     local ontologia_weight ontologia_attenuated
-    ontologia_weight=$(echo "$output" | jq -r '.[] | select(.name=="ontologia_paramuna") | .gradual_weight')
-    ontologia_attenuated=$(echo "$output" | jq -r '.[] | select(.name=="ontologia_paramuna") | .attenuated')
+    ontologia_weight=$(echo "$output" | jq -r '.results[] | select(.name=="ontologia_paramuna") | .gradual_weight')
+    ontologia_attenuated=$(echo "$output" | jq -r '.results[] | select(.name=="ontologia_paramuna") | .attenuated')
     if [ "$ontologia_weight" = "0" ] || [ "$ontologia_weight" = "0.0" ]; then
         log_success "ontologia_paramuna: σ*=0.0 (gate fired)"
     else
@@ -295,8 +295,8 @@ run_paramo_gate_interaction() {
     
     # Check 1: evidencia_institucional = 1.0, not attenuated (unattacked)
     local evidencia_weight evidencia_attenuated
-    evidencia_weight=$(echo "$output" | jq -r '.[] | select(.name=="evidencia_institucional") | .gradual_weight')
-    evidencia_attenuated=$(echo "$output" | jq -r '.[] | select(.name=="evidencia_institucional") | .attenuated')
+    evidencia_weight=$(echo "$output" | jq -r '.results[] | select(.name=="evidencia_institucional") | .gradual_weight')
+    evidencia_attenuated=$(echo "$output" | jq -r '.results[] | select(.name=="evidencia_institucional") | .attenuated')
     if [ "$evidencia_weight" = "1" ] || [ "$evidencia_weight" = "1.0" ]; then
         log_success "evidencia_institucional: σ*=1.0 (unattacked)"
     else
@@ -312,8 +312,8 @@ run_paramo_gate_interaction() {
     
     # Check 2: ontologia_paramuna = 0.0, attenuated
     local ontologia_weight ontologia_attenuated
-    ontologia_weight=$(echo "$output" | jq -r '.[] | select(.name=="ontologia_paramuna") | .gradual_weight')
-    ontologia_attenuated=$(echo "$output" | jq -r '.[] | select(.name=="ontologia_paramuna") | .attenuated')
+    ontologia_weight=$(echo "$output" | jq -r '.results[] | select(.name=="ontologia_paramuna") | .gradual_weight')
+    ontologia_attenuated=$(echo "$output" | jq -r '.results[] | select(.name=="ontologia_paramuna") | .attenuated')
     if [ "$ontologia_weight" = "0" ] || [ "$ontologia_weight" = "0.0" ]; then
         log_success "ontologia_paramuna: σ*=0.0 (gate fired before h-categoriser)"
     else
@@ -329,7 +329,7 @@ run_paramo_gate_interaction() {
     
     # Check 3: Total atoms = 2 (both present in output)
     local atom_count
-    atom_count=$(echo "$output" | jq 'length')
+    atom_count=$(echo "$output" | jq '.results | length')
     if [ "$atom_count" -eq 2 ]; then
         log_success "Output contains 2 atoms (topology preserved despite attenuation)"
     else

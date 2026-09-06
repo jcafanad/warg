@@ -11,16 +11,20 @@
 --     "atoms": [{ "name": ..., "initial_weight": ..., "weight": ...,
 --                 "perplexity": ..., "attacks": [...] }] }
 --
--- Wire format (stdout — flat JSON array, authoritative):
---   [{ "name": ..., "gradual_weight": ..., "attenuated": ...,
---      "attackers": [{"attacker_id": ..., "attacker_sigma": ...}, ...] }, ...]
+-- Wire format (stdout, authoritative):
+--   { "status": "converged" | "step_cap_reached",
+--     "steps": <int>,
+--     "results": [{ "name": ..., "gradual_weight": ..., "attenuated": ...,
+--                   "attackers": [{"attacker_id": ..., "attacker_sigma": ...}] }] }
 --
 -- "attackers" contains all attackers with σ* > DUnit 0 (natural bottom of the
 -- D-Poset). Any ε > 0 truncation is the orchestrator's responsibility.
 --
--- The flat array format (not a wrapper object) matches sybyn/warg_ffi.py:
---   return [WargResult.from_dict(item) for item in data]
--- where data = json.loads(proc.stdout) — direct iteration, no "results" key.
+-- This was a flat array until the run's status was added. Convergence is a
+-- property of the iteration and not of any one argument, so an array had
+-- nowhere to put it and a per-atom field would have recorded a global fact at
+-- the wrong level. sybyn/warg_ffi.py reads data["results"] and rejects a bare
+-- array, which can now only mean an installed binary older than this format.
 module Main (main) where
 
 import qualified Data.ByteString.Lazy as BS
@@ -31,7 +35,7 @@ import System.IO (hPutStrLn, stderr)
 
 import Data.Text (unpack)
 import DUnit (DUnit(..))
-import Types (WireRequest(..), WireResult(..), buildWArg, validateWArg)
+import Types (WireRequest(..), WireResult(..), WireResponse(..), buildWArg, validateWArg)
 import FixedPoint (runFixedPointWithAttenuation)
 import Explanation (explain, explAtomId, explAttackers)
 
@@ -56,17 +60,18 @@ main = do
 -- The ε threshold for attacker inclusion is the categorical natural bottom
 -- (σ* > 0), fixed inside 'explain' — see Explanation.hs for the full
 -- rationale. The orchestrator owns any ε > 0 it wishes to apply.
-processRequest :: WireRequest -> [WireResult]
+processRequest :: WireRequest -> WireResponse
 processRequest req =
   let warg      = buildWArg req
       threshold = wrCorpusMaxPerplexity req
-      attMap    = runFixedPointWithAttenuation warg threshold
+      (attMap, status, steps) = runFixedPointWithAttenuation warg threshold
       sigma     = fmap fst attMap
       explMap   = Map.fromList
                     [ (explAtomId e, explAttackers e)
                     | e <- explain warg sigma
                     ]
-  in [ WireResult
+  in WireResponse status steps
+     [ WireResult
          { wrName          = name
          -- fromRational converts the exact Rational back to Double for the
          -- wire output (JSON). The wire format specifies gradual_weight as a
