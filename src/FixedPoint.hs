@@ -12,9 +12,18 @@
 --   σ(aᵢ) = w(aᵢ) / (w(aᵢ) + Σ σ(attacker))
 -- is the instance from equation (3) of [7] with f(x) = x (identity scoring).
 --
--- Convergence is guaranteed by [7] via monotone iteration on the complete
--- lattice ([0,1]^n, ≤). With Rational arithmetic, exact equality (==) is a
--- safe and correct termination guard; no ε-tolerance is needed.
+-- Convergence is guaranteed by [7], Theorem 3.20: the operator is order
+-- reversing and satisfies that theorem's homogeneity condition, which
+-- together give a unique fixed point reached from any starting vector, by a
+-- nested-interval argument. This is neither Banach (there is no metric and no
+-- Lipschitz constant) nor Knaster-Tarski (order-reversal means the operator
+-- is not monotone, so Knaster-Tarski does not apply).
+--
+-- Termination uses exact equality (==) under Rational arithmetic; there is no
+-- ε-tolerance. That guard is reached on acyclic frameworks. It is NOT reached
+-- on cyclic ones: the fixed point is then generically irrational, so the
+-- iteration runs to its step cap and returns a value for which f(s) == s is
+-- False. Verified on the 2-cycle with w=1, whose fixed point is (√5-1)/2.
 module FixedPoint
   ( hCategoriser
   , runFixedPoint

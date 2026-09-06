@@ -18,7 +18,7 @@ The h-categoriser of Definition 2.7 in [7]:
 σ(aᵢ) = w(aᵢ) / (w(aᵢ) + Σ_{aⱼ attacks aᵢ} σ(aⱼ))
 ```
 
-with initial weights w(aᵢ) ∈ [0,1] and identity scoring function f(x) = x. Unique fixed point via contraction mapping on ([0,1]ⁿ, ‖·‖∞); computed by synchronous iteration to tolerance 1e-10. The unit interval carries the canonical D-Poset structure (partial subtraction b \ a = b − a when a ≤ b) verified by QuickCheck.
+with initial weights w(aᵢ) ∈ [0,1] and identity scoring function f(x) = x. Unique fixed point by Theorem 3.20 of [7]: the h-categoriser is order reversing, and with that theorem's homogeneity condition the fixed point is unique and reached from any starting vector, by a nested-interval argument rather than by contraction. Termination uses exact equality under `Rational` arithmetic; there is no ε-tolerance. Known limitation: on cyclic frameworks the fixed point is generically irrational, exact equality is never reached, and the iteration runs to its step cap. The unit interval carries the canonical D-Poset structure (partial subtraction b \ a = b − a when a ≤ b) verified by QuickCheck.
 
 **Stratum B — categorical typing (Year 1, prospective)**
 
