@@ -2,9 +2,20 @@
 -- |
 -- warg test suite: QuickCheck D-Poset laws, cocartesian unit laws,
 -- FixedPoint / attenuation properties, and Year 1 actegory laws.
+--
+-- __The suite can fail.__ Every property goes through 'quickCheckResult' and
+-- every hand-checked assertion through 'unit'; both fold their verdict into an
+-- 'IORef' that 'main' reads before deciding between 'exitSuccess' and
+-- 'exitFailure'. Until 2026-09-06 the properties ran under 'quickCheck', which
+-- prints a verdict and then discards it, and the unit checks printed the string
+-- @FAIL@ and carried on; 'main' had no exit path at all, so the suite exited 0
+-- whatever happened. A green result was a printout rather than evidence, and a
+-- CI badge over it would have been permanently green by construction.
 module Main (main) where
 
+import Data.IORef (IORef, newIORef, modifyIORef', readIORef)
 import Data.Ratio ((%))
+import System.Exit (exitFailure, exitSuccess)
 import Test.QuickCheck
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
@@ -263,45 +274,68 @@ prop_hcat_satisfies_fixedpoint warg =
   in all check (Map.keys (wArgArgs warg))
 
 -- ---------------------------------------------------------------------------
+-- Reporting: a verdict that reaches the exit code
+-- ---------------------------------------------------------------------------
+
+-- | Run a property and fold its verdict into the suite's outcome.
+--
+-- 'quickCheck' prints a verdict and discards it, which is why the suite could
+-- not fail; 'quickCheckResult' returns one. Threading it through the ref is the
+-- whole of the fix.
+prop :: Testable a => IORef Bool -> a -> IO ()
+prop ref p = do
+  res <- quickCheckResult p
+  modifyIORef' ref (&& isSuccess res)
+
+-- | Fold a hand-checked assertion into the suite's outcome.
+--
+-- The printed PASS\/FAIL string used to be the only record of the verdict, so a
+-- FAIL was invisible to the runner. @detail@ is appended on failure only, which
+-- preserves the diagnostics the previous @if@\/@else@ arms printed.
+unit :: IORef Bool -> String -> Bool -> String -> IO ()
+unit ref caption ok detail = do
+  putStrLn (caption ++ (if ok then "PASS" else "FAIL" ++ detail))
+  modifyIORef' ref (&& ok)
+
+-- ---------------------------------------------------------------------------
 -- Main
 -- ---------------------------------------------------------------------------
 
 main :: IO ()
 main = do
+  ref <- newIORef True
   putStrLn "=== DUnit D-Poset laws ==="
-  putStr "prop_diff_exists:       " >> quickCheck prop_diff_exists
-  putStr "prop_diff_upper_bound:  " >> quickCheck prop_diff_upper_bound
-  putStr "prop_diff_antitone:     " >> quickCheck prop_diff_antitone
-  putStr "prop_diff_involution:   " >> quickCheck prop_diff_involution
+  putStr "prop_diff_exists:       " >> prop ref prop_diff_exists
+  putStr "prop_diff_upper_bound:  " >> prop ref prop_diff_upper_bound
+  putStr "prop_diff_antitone:     " >> prop ref prop_diff_antitone
+  putStr "prop_diff_involution:   " >> prop ref prop_diff_involution
 
   putStrLn "=== D-Poset tensor product (monoidal laws) ==="
-  putStr "prop_tensor_left_unit:  " >> quickCheck prop_tensor_left_unit
-  putStr "prop_tensor_right_unit: " >> quickCheck prop_tensor_right_unit
-  putStr "prop_tensor_assoc:      " >> quickCheck prop_tensor_assoc
-  putStr "prop_tensor_comm:       " >> quickCheck prop_tensor_comm
-  putStr "prop_tensor_zero:       " >> quickCheck prop_tensor_zero
+  putStr "prop_tensor_left_unit:  " >> prop ref prop_tensor_left_unit
+  putStr "prop_tensor_right_unit: " >> prop ref prop_tensor_right_unit
+  putStr "prop_tensor_assoc:      " >> prop ref prop_tensor_assoc
+  putStr "prop_tensor_comm:       " >> prop ref prop_tensor_comm
+  putStr "prop_tensor_zero:       " >> prop ref prop_tensor_zero
 
   putStrLn "=== Monoidal unit laws ==="
-  putStr "prop_leftUnit:          " >> quickCheck prop_leftUnit
-  putStr "prop_rightUnit:         " >> quickCheck prop_rightUnit
+  putStr "prop_leftUnit:          " >> prop ref prop_leftUnit
+  putStr "prop_rightUnit:         " >> prop ref prop_rightUnit
 
   putStrLn "=== Monoidal associativity law ==="
-  putStr "prop_assoc (disjoint):  " >> quickCheck prop_assoc_disjoint
+  putStr "prop_assoc (disjoint):  " >> prop ref prop_assoc_disjoint
 
   putStrLn "=== hCategoriser unit tests ==="
   -- Unattacked argument: h(w, []) = w / (w + 0) = 1.
   -- With Rational arithmetic this is exact: 7/10 / (7/10 + 0) = 1 % 1.
   let w = DUnit (7 % 10)
   let result = hCategoriser w []
-  if unDUnit result == 1
-    then putStrLn "hCategoriser []:              PASS"
-    else putStrLn ("hCategoriser []: FAIL (got " ++ show (unDUnit result) ++ ")")
+  unit ref "hCategoriser []:              " (unDUnit result == 1)
+       (" (got " ++ show (unDUnit result) ++ ")")
 
   -- Zero-weight argument stays at 0
   let z = hCategoriser (DUnit 0) [DUnit (1 % 2)]
-  if unDUnit z == 0
-    then putStrLn "hCategoriser zero-weight:     PASS"
-    else putStrLn ("hCategoriser zero-weight: FAIL (got " ++ show (unDUnit z) ++ ")")
+  unit ref "hCategoriser zero-weight:     " (unDUnit z == 0)
+       (" (got " ++ show (unDUnit z) ++ ")")
 
   -- Two equal-weight atoms mutually attacking converge to exactly 1/2.
   -- Rational fixed-point: σ = 1/2 is the unique solution to
@@ -320,40 +354,41 @@ main = do
   let (sigma, _, _) = runFixedPoint twoAtom
   let sa = unDUnit (sigma Map.! "a")
   let sb = unDUnit (sigma Map.! "b")
-  if sa == 1 % 2 && sb == 1 % 2
-    then putStrLn "runFixedPoint symmetric:      PASS"
-    else putStrLn ("runFixedPoint symmetric: FAIL (a=" ++ show sa ++ " b=" ++ show sb ++ ")")
+  unit ref "runFixedPoint symmetric:      " (sa == 1 % 2 && sb == 1 % 2)
+       (" (a=" ++ show sa ++ " b=" ++ show sb ++ ")")
 
   -- σ* satisfies the fixed-point equation (D-invariant morphism; not Para)
-  putStr "prop_hcat_satisfies_fixedpoint: " >> quickCheck (forAll genAcyclicWArg prop_hcat_satisfies_fixedpoint)
+  putStr "prop_hcat_satisfies_fixedpoint: " >> prop ref (forAll genAcyclicWArg prop_hcat_satisfies_fixedpoint)
 
   putStrLn "=== Attenuation gate ==="
-  putStrLn $ "attenuation above threshold:  " ++
-    if prop_attenuation_gate_above_threshold then "PASS" else "FAIL"
-  putStrLn $ "attenuation below threshold:  " ++
-    if prop_attenuation_gate_below_threshold then "PASS" else "FAIL"
-  putStrLn $ "attenuation at threshold:     " ++
-    if prop_attenuation_gate_at_threshold    then "PASS" else "FAIL"
+  unit ref "attenuation above threshold:  " prop_attenuation_gate_above_threshold ""
+  unit ref "attenuation below threshold:  " prop_attenuation_gate_below_threshold ""
+  unit ref "attenuation at threshold:     " prop_attenuation_gate_at_threshold    ""
 
   putStrLn "=== Year 1: Cospan laws (H(AArg) horizontal 1-cells) ==="
-  putStr "prop_cospan_leftleg_total:    " >> quickCheck prop_cospan_leftleg_total
-  putStr "prop_cospan_rightleg_total:   " >> quickCheck prop_cospan_rightleg_total
-  putStr "prop_pushout_left_commutes:   " >> quickCheck prop_pushout_left_commutes
-  putStr "prop_pushout_right_commutes:  " >> quickCheck prop_pushout_right_commutes
+  putStr "prop_cospan_leftleg_total:    " >> prop ref prop_cospan_leftleg_total
+  putStr "prop_cospan_rightleg_total:   " >> prop ref prop_cospan_rightleg_total
+  putStr "prop_pushout_left_commutes:   " >> prop ref prop_pushout_left_commutes
+  putStr "prop_pushout_right_commutes:  " >> prop ref prop_pushout_right_commutes
 
   putStrLn "=== Year 1: D-actegory laws (Proposition 1) ==="
-  putStr "prop_unitor_law:              " >> quickCheck prop_unitor_law
-  putStr "prop_multiplicator_law:       " >> quickCheck prop_multiplicator_law
-  putStr "prop_unitor_left_triangle:    " >> quickCheck prop_unitor_left_triangle
-  putStr "prop_unitor_right_triangle:   " >> quickCheck prop_unitor_right_triangle
+  putStr "prop_unitor_law:              " >> prop ref prop_unitor_law
+  putStr "prop_multiplicator_law:       " >> prop ref prop_multiplicator_law
+  putStr "prop_unitor_left_triangle:    " >> prop ref prop_unitor_left_triangle
+  putStr "prop_unitor_right_triangle:   " >> prop ref prop_unitor_right_triangle
 
   putStrLn "=== Year 1: Para_bullet(WArg) laws (Proposition 2) ==="
-  putStr "prop_para_left_unit:                 " >> quickCheck prop_para_left_unit
-  putStr "prop_para_right_unit:                " >> quickCheck prop_para_right_unit
-  putStr "prop_para_compose_associative:       " >> quickCheck prop_para_compose_associative
-  putStr "prop_para_horizontal_param_tensor:   " >> quickCheck prop_para_horizontal_param_tensor
-  putStr "prop_para_vcomp_identity:            " >> quickCheck prop_para_vcomp_identity
-  putStr "prop_scalemorphism_equivariant:      " >> quickCheck prop_scalemorphism_equivariant
-  putStr "prop_para_decomposition_equivalence: " >> quickCheck prop_para_decomposition_equivalence
+  putStr "prop_para_left_unit:                 " >> prop ref prop_para_left_unit
+  putStr "prop_para_right_unit:                " >> prop ref prop_para_right_unit
+  putStr "prop_para_compose_associative:       " >> prop ref prop_para_compose_associative
+  putStr "prop_para_horizontal_param_tensor:   " >> prop ref prop_para_horizontal_param_tensor
+  putStr "prop_para_vcomp_identity:            " >> prop ref prop_para_vcomp_identity
+  putStr "prop_scalemorphism_equivariant:      " >> prop ref prop_scalemorphism_equivariant
+  putStr "prop_para_decomposition_equivalence: " >> prop ref prop_para_decomposition_equivalence
 
   putStrLn "=== All tests done ==="
+  ok <- readIORef ref
+  if ok
+    then putStrLn "all checks as expected" >> exitSuccess
+    else putStrLn "SUITE FAILED: at least one check did not behave as expected"
+           >> exitFailure
