@@ -1,9 +1,11 @@
 cabal-version:   3.16
 name:            warg
 version:         0.1.0.0
-license:         NONE
-author:          Unknown
-maintainer:      Unknown
+license:         GPL-3.0-or-later
+license-file:    LICENSE
+author:          Juan Afanador
+maintainer:      jafanad@gmail.com
+copyright:       2026 Juan Afanador
 build-type:      Simple
 extra-doc-files: CHANGELOG.md
 

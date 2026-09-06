@@ -248,4 +248,4 @@ For a six-argument scenario with cycle structure, speaker provenance, and the st
 
 ## Licence
 
-GNU General Public Licence v3 or later.
+GNU General Public Licence v3 or later. See `LICENSE`.
