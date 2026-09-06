@@ -44,6 +44,45 @@ The profunctorial characterisation at Stratum C (Year 2) is the theoretical acco
 
 ---
 
+## The argumentation framework is closed
+
+Every argument named in the attack relation must carry a weight. An atom that
+appears only as an attacker, or only as a target, is a dangling id, and
+`validateWArg` refuses the framework, naming it rather than proceeding.
+
+This is a commitment. Three readings of such an argument are available and they
+give different answers. Dropping the attack treats the unseen argument as fully
+defeated, which is optimistic and silent: nothing in the output records that an
+attack was discarded. Scoring it at full strength is pessimistic, and treats
+what lies beyond the framework as undefeated because it is unexamined. Refusing
+declines to choose, on the ground that a framework whose membership is not
+settled is not yet a framework.
+
+`warg` refuses. `equilibrium-optics`, a separate implementation of the same
+semantics, takes the third reading. It keeps such arguments as a *frontier* and
+scores them at 1. That is the pessimistic reading because 1 is the greatest
+attack strength the unit interval admits, so an argument that cannot be
+inspected is credited with the strongest attack it could have made. Frontier
+arguments are also counted in the in-degree. That matters arithmetically: the
+homogeneity constant is computed from the in-degree, and it is sufficient only
+when the frontier is counted.
+
+Neither is a defect in the other. Closed means the set of arguments is settled
+before scoring begins: every claim bearing on the outcome has already been
+extracted and already weighted. That holds for a framework built by hand and
+fails for one drawn from a corpus, where claims arrive from outside whatever
+was extracted.
+
+This is the question the `attenuated` flag answers in another register.
+`Explanation` already holds two silencings apart: attenuation, which marks
+distributional epistemic imposition, and ε-filtering, which is cosmetic
+structural truncation. An argument at the horizon is a third case, neither
+scored and then erased nor present but weak, but never weighted at all.
+Refusing is how `warg` declines to fold that third case into either of the
+others. The Paramuno material is where the difference bears, since a claim can
+fail to be extracted for the same reasons it draws extreme perplexity once it
+has been.
+
 ## What is in the repository now
 
 | File | Content |

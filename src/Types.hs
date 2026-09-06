@@ -238,6 +238,21 @@ buildWArg req = WArg
 -- Returns 'Left msg' naming the first dangling id, or 'Right warg' if the
 -- graph is well-formed.  This is a pure function: it does not modify the
 -- framework, only checks it.
+--
+-- An id appearing in an attack but absent from 'wArgArgs' can be read as
+-- malformed input, or as a claim on the framework's horizon: constituted as an
+-- argument by appearing in the relation, but carrying no weight because
+-- nothing in the corpus scored it. warg takes the first reading and refuses.
+-- equilibrium-optics takes the second, keeping such ids as a frontier and
+-- scoring them at 1; that is, an attack that cannot be examined is treated as
+-- undefeated.
+--
+-- What both refuse is the third option, which 'runFixedPoint' would implement
+-- on its own if this check were removed: dropping the attack. That is not
+-- neutral bookkeeping. Because 'runFixedPoint' reads attacker scores with
+-- 'Map.findWithDefault 0', a dropped attacker and an attacker scored 0 are
+-- indistinguishable in the output, so dropping silently asserts that the
+-- unseen is defeated.
 validateWArg :: WArg -> Either Text WArg
 validateWArg warg =
   case find isDangling allIds of
