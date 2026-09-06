@@ -61,7 +61,7 @@
 -- = Direction convention
 --
 -- The paper writes bullet : D x Arg -> Arg, so D is the LEFT argument.
--- The old src-cat/WArg.hs had bullet :: c a -> m -> c a (C then M), which
+-- An earlier implementation had bullet :: c a -> m -> c a (C then M), which
 -- was backwards.  This module uses:
 --
 --   bullet :: DUnit -> WArg -> WArg    (M first, C second)

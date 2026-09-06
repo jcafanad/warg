@@ -120,7 +120,7 @@ runFixedPoint warg = converge 0 initialSigma
 -- erased — they are marked as epistemically imposed. The 21.769 default is
 -- the empirical λ_⊥ of "poner a valer a través del trabajo" (the automatic
 -- subject atom), the highest perplexity still within natural Spanish in the
--- Paramuno corpus (internal/CONFIG_ANALYSIS.md, 2026-03-18).
+-- Paramuno corpus (measured 2026-03-18).
 --
 -- This is a post-fixed-point correction. The dynamics are not modified; only
 -- the output is filtered. This preserves the fixed-point's mathematical

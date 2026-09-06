@@ -119,7 +119,7 @@ These scenarios demonstrate core Year 0 functionality but are minimal for pedago
 
 - **Speaker provenance**: The demos don't encode speaker identity (Speaker GR, AC, etc.), which affects epistemic standing in the full VALUE_NET pipeline.
 
-- **Empirical perplexity distribution**: The demos use constructed perplexity values for pedagogical range. Real corpus perplexity follows a right-skewed distribution with mode ≈ 5.0 and long tail to 28.4. See `internal/CONFIG_ANALYSIS.md` for empirical statistics.
+- **Empirical perplexity distribution**: The demos use constructed perplexity values for pedagogical range. Real corpus perplexity follows a right-skewed distribution with mode ≈ 5.0 and long tail to 28.4.
 
 For corpus-scale complexity, see `examples/paramuno_corpus_run.json` (when available, pending ethics review).
 
@@ -135,4 +135,4 @@ The theoretical grounding for these scenarios:
 
 - **THEORY_CODE_ALIGNMENT.md** (in repo): Maps theoretical claims to implementation decisions, including the initial_weight/weight distinction and the strict inequality gate condition.
 
-The automatic subject atom ("poner a valer a través del trabajo," λ_⊥ = 21.769) is documented in `internal/project_automatic_subject_finding.md` (empirical identification from Speaker GR transcripts, 2019-2020 fieldwork).
+The automatic subject atom ("poner a valer a través del trabajo," λ_⊥ = 21.769) was identified empirically from Speaker GR transcripts (2019-2020 fieldwork).
